@@ -4,6 +4,8 @@ import sys
 def install(package):
     subprocess.check_call([sys.executable, "-m", "pip", "install", package])
 
-install("requests")
+#install("requests")
 
-install("bs4")
+#install("bs4")
+
+install("lxml")
