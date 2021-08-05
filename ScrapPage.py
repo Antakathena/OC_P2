@@ -4,24 +4,10 @@ import requests
 from bs4 import BeautifulSoup
 
 SESSION = requests.Session()
-
-#on commence par aller chercher la page d'accueil et parcer
 URLaccueil = "https://books.toscrape.com/"
-ContenuPageAccueil = SESSION.get(URLaccueil)
-soup = BeautifulSoup(ContenuPageAccueil.text, "lxml")
 
-#puis on scrappe les liens vers les pages n°1 de chaque catégorie du catalogue
-links = []
-for link in soup.find_all("a"):
-    links.append(link.attrs["href"])
-categories_links = []
-for l in links [3:53]:
-    categories_links.append(URLaccueil + l)
 
-#puis il faut que chacun de ces liens soit traité pour extraire les livres de la catégorie 
-# while?
-
-def scrap_books_Url(URL):
+def scrap_books_Url(URL: str) -> list:
     """
     C'est la fonction qui récupére les URL des livres d'une catégorie.
     Elle s'applique sur l'url d'une page catégorie.
@@ -53,24 +39,9 @@ def scrap_books_Url(URL):
 
     return clean_Links_to_books
 
-test_scrap_books_Url = scrap_books_Url("https://books.toscrape.com/catalogue/category/books/travel_2/index.html")
-
-assert test_scrap_books_Url[0] == "https://books.toscrape.com/catalogue/its-only-the-himalayas_981/index.html", \
-       f"La fonction retourne la mauvaise url.\n Reçu: {test_scrap_books_Url[0]}. Attendu: https://books.toscrape.com/catalogue/its-only-the-himalayas_981/index.html"
-assert len(test_scrap_books_Url) == 11, \
-       f"Il manque des URL sur la page Travel.\n Reçu: {len(test_scrap_books_Url)}. Attendu: 11."
-
-# Test de la pagination
-URL = "https://books.toscrape.com/catalogue/category/books/sequential-art_5/index.html"
-BooksUrl_List = scrap_books_Url(URL)
-for URL in BooksUrl_List:
-    print(URL)
-print(len(BooksUrl_List))
-assert len(BooksUrl_List) == 75
-
-arg = BooksUrl_List[3]
-
 def ScrapBookPage(arg):
+    """"""
+    # assert préconditions
     URLpageLivre = arg
     ContenuPage = SESSION.get(URLpageLivre)
     soup = BeautifulSoup(ContenuPage.text, "lxml")
@@ -87,8 +58,8 @@ def ScrapBookPage(arg):
     review_rating = star_rating.attrs["class"][1]
     
     BookInfos = {}
-    BookInfos["product_page_url"]= URLpageLivre
-    BookInfos["universal_ product_code (upc)"]= UPC
+    BookInfos["product_page_url"] = URLpageLivre
+    BookInfos["universal_ product_code (upc)"] = UPC
     BookInfos["title"]= title
     BookInfos["price_including_tax"]= price_including_tax
     BookInfos["price_excluding_tax"]= price_excluding_tax
@@ -97,8 +68,33 @@ def ScrapBookPage(arg):
     BookInfos["category"]= category
     BookInfos["review_rating"]= review_rating
     
+    # assert postconditions
     return BookInfos
+
+   
+if __name__ == "__main__":
     
-for i in ScrapBookPage(arg).items():
-    print(i)
-    
+    ContenuPageAccueil = SESSION.get(URLaccueil)
+    soup = BeautifulSoup(ContenuPageAccueil.text, "lxml")
+
+    #puis on scrappe les liens vers les pages n°1 de chaque catégorie du catalogue
+    links = []
+    for link in soup.find_all("a"):
+        links.append(link.attrs["href"])
+    categories_links = []
+    for l in links [3:53]:
+        categories_links.append(URLaccueil + l)
+
+    test_scrap_books_Url = scrap_books_Url("https://books.toscrape.com/catalogue/category/books/travel_2/index.html")
+
+    assert test_scrap_books_Url[0] == "https://books.toscrape.com/catalogue/its-only-the-himalayas_981/index.html", \
+        f"La fonction retourne la mauvaise url.\n Reçu: {test_scrap_books_Url[0]}. Attendu: https://books.toscrape.com/catalogue/its-only-the-himalayas_981/index.html"
+    assert len(test_scrap_books_Url) == 11, \
+        f"Il manque des URL sur la page Travel.\n Reçu: {len(test_scrap_books_Url)}. Attendu: 11."
+
+    # Test de la pagination
+    URL = "https://books.toscrape.com/catalogue/category/books/sequential-art_5/index.html"
+    BooksUrl_List = scrap_books_Url(URL)
+    assert len(BooksUrl_List) == 75
+
+    arg = BooksUrl_List[3]
