@@ -8,4 +8,6 @@ def install(package):
 
 #install("bs4")
 
-install("lxml")
+#install("lxml")
+
+install("csv")
