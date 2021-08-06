@@ -82,8 +82,6 @@ def scrap_book_page(books_pages : str):
     review_rating = star_rating.attrs["class"][1]
     review_rating = REVIEW_RATINGS[review_rating]
     image_url = soup.find("img").attrs["src"].replace("../../","http://books.toscrape.com/")
-    if len(upc) != 16:
-        log.warning("Le UPC pour la page {url} est mauvais")
 
     book_infos = {}
     book_infos["product_page_url"] = URLpageLivre
@@ -105,24 +103,18 @@ if __name__ == "__main__":
     home_page = SESSION.get(url_home_page)
     soup = BeautifulSoup(home_page.text, "lxml")
 
-    # puis on scrappe les liens vers les pages des livres de chaque catégorie
+    # puis on scrappe les liens vers les pages des catégories
     categories_pages = {}
     for link in soup.find_all("a")[3:53]: #les autres a ne sont pas des liens vers des catégories
         categories_pages[link.text.strip()] = url_home_page + link.attrs["href"]
 
+    # puis les liens vers les livres à partir des pages d'une catégorie
     books_pages = {}
     for categorie, url_categorie in categories_pages.items(): # sans item, on itere qu'à travers les keys
         books_pages[categorie.strip()] = scrap_books_url(url_categorie)
         print(f"Catégorie scrapée: {categorie}, nombre de livres: {len(books_pages[categorie.strip()])}")
 
-    assert books_pages["Travel"][0] == "https://books.toscrape.com/catalogue/its-only-the-himalayas_981/index.html", \
-        f"La fonction retourne la mauvaise url.\n Reçu: {test_scrap_books_url[0]}. Attendu: https://books.toscrape.com/catalogue/its-only-the-himalayas_981/index.html"
-    assert len(books_pages["Travel"]) == 11, \
-        f"Il manque des url sur la page Travel.\n Reçu: {len(test_scrap_books_url)}. Attendu: 11."
-    assert len(books_pages["Sequential Art"]) == 75
-    test_scrap_book_page = scrap_book_page("https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html")
-    assert test_scrap_book_page["title"] == "A Light in the Attic", f"La fonction retourne la mauvaise réponse. Valeur reçue: '{test_scrap_book_page['title']}'"
-
+    #puis les infos des livres à partir de ces liens trouvés sur les pages d'une catégorie
     books_infos = {}
     for categorie, books_url in books_pages.items():
         books_infos[categorie] = []
@@ -131,7 +123,29 @@ if __name__ == "__main__":
             books_infos[categorie].append(book_info)
         print(f"Pages de la catégorie {categorie} scrapée")
         
+try: 
+    for categorie in books_infos: 
         with open(f'{categorie}.csv', 'w', encoding="utf-8") as file:
-            headers = ["product_page_url" ,"universal_ product_code (upc)", "title" , "price_including_tax", "price_excluding_tax" , "number_available" , "product_description" , "category" , "review_rating" , "image_url" ]
+            headers = ["product_page_url","universal_ product_code (upc)","title" ,"price_including_tax","price_excluding_tax" ,"number_available","product_description","category","review_rating","image_url"]
             writer = csv.DictWriter(file, headers)
             writer.writerows(books_infos[categorie])
+
+except IOError:
+    print("I/O error")    
+            
+
+"""
+    assert books_pages["Travel"][0] == "https://books.toscrape.com/catalogue/its-only-the-himalayas_981/index.html", \
+        f"La fonction retourne la mauvaise url.\n Reçu:{books_pages["Travel"][0]}. Attendu: https://books.toscrape.com/catalogue/its-only-the-himalayas_981/index.html"
+    assert len(books_pages["Travel"]) == 11, \
+        f"Il manque des url sur la page Travel.\n Reçu:{books_pages["Travel"]}. Attendu: 11."
+    assert len(books_pages["Sequential Art"]) == 75
+    test_scrap_book_page = scrap_book_page("https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html")
+    assert test_scrap_book_page["title"] == "A Light in the Attic", f"La fonction retourne la mauvaise réponse. Valeur reçue: '{test_scrap_book_page['title']}'"
+"""
+    
+
+"""
+# with open ("img", "wb") as
+# session page.content
+"""
