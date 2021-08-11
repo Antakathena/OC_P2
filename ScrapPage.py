@@ -15,7 +15,7 @@ REVIEW_RATINGS = {
 }
 
 
-def scrap_books_url(url: str) -> list:
+def scrap_books_urls(url: str) -> list:
     """
     C'est la fonction qui récupére les url des livres d'une catégorie.
     Elle s'applique sur l'url d'une page catégorie.
@@ -36,14 +36,14 @@ def scrap_books_url(url: str) -> list:
         link = h3.a.attrs["href"]
         absolute_link = link.replace("../../../", f"{url_home_page}catalogue/")
         clean_links_to_books.append(absolute_link)
-    # On doit trouver l'url de la {page suivante} et faire tourner la fonction scrap_books_url() dessus \net ajouter les url trouvées à la liste des livres.
+    # On doit trouver l'url de la {page suivante} et faire tourner la fonction scrap_books_urls() dessus \net ajouter les url trouvées à la liste des livres.
     balises_a = soup.find_all("a")
     balises_a[-1]
     if balises_a[-1].text == "next":
         page_suivante = balises_a[-1].attrs["href"]
         url = url.split("/")[:-1]  # split divise une chaine de caractères en plusieurs elt séparés par /
         url = "/".join(url + [page_suivante])
-        return clean_links_to_books + scrap_books_url(url) # concatenation de liste, extend modifie l'ancienne liste
+        return clean_links_to_books + scrap_books_urls(url) # concatenation de liste, extend modifie l'ancienne liste
 
     return clean_links_to_books
 
@@ -63,9 +63,10 @@ def scrap_book_page(books_pages : str):
     # assert préconditions
     assert books_pages.startswith("https://books.toscrape.com/catalogue/"), \
            f"Cette fonction ne fonctionne que sur les url https://books.toscrape/catalogue/. Reçu: {books_pages}"
+    #encoding="utf-8" sinon pb sur title et description; BeautifulSoup(web, from_encoding='utf8')?
     URLpageLivre = books_pages
-    ContenuPage = SESSION.get(URLpageLivre)
-    soup = BeautifulSoup(ContenuPage.text, "lxml")
+    page_content = SESSION.get(URLpageLivre)
+    soup = BeautifulSoup(page_content.content.decode('utf-8'), "lxml")
     upc = soup.find("td").text
     title = soup.title.text.strip().replace("| Books to Scrape - Sandbox", "").strip()
     price_including_tax = soup.find(text="Price (incl. tax)").findNext('td').text.strip('Â').replace("£", "")
@@ -97,11 +98,11 @@ def scrap_book_page(books_pages : str):
 
     return book_infos
 
-   
+
 if __name__ == "__main__":
     #On récupère la page d'accueil
     home_page = SESSION.get(url_home_page)
-    soup = BeautifulSoup(home_page.text, "lxml")
+    soup = BeautifulSoup(home_page.content.decode('utf-8'), "lxml")
 
     # puis on scrappe les liens vers les pages des catégories
     categories_pages = {}
@@ -111,28 +112,38 @@ if __name__ == "__main__":
     # puis les liens vers les livres à partir des pages d'une catégorie
     books_pages = {}
     for categorie, url_categorie in categories_pages.items(): # sans item, on itere qu'à travers les keys
-        books_pages[categorie.strip()] = scrap_books_url(url_categorie)
+        books_pages[categorie.strip()] = scrap_books_urls(url_categorie)
         print(f"Catégorie scrapée: {categorie}, nombre de livres: {len(books_pages[categorie.strip()])}")
 
     #puis les infos des livres à partir de ces liens trouvés sur les pages d'une catégorie
     books_infos = {}
-    for categorie, books_url in books_pages.items():
+    for categorie, books_urls in books_pages.items():
         books_infos[categorie] = []
-        for book_url in books_url:
+        for book_url in books_urls:
             book_info = scrap_book_page(book_url)
             books_infos[categorie].append(book_info)
-        print(f"Pages de la catégorie {categorie} scrapée")
+            print(f"Pages de la catégorie {categorie} scrapées")
         
 try: 
     for categorie in books_infos: 
+        headers = ["product_page_url","universal_ product_code (upc)","title" ,"price_including_tax","price_excluding_tax" ,"number_available","product_description","category","review_rating","image_url"]
         with open(f'{categorie}.csv', 'w', encoding="utf-8") as file:
-            headers = ["product_page_url","universal_ product_code (upc)","title" ,"price_including_tax","price_excluding_tax" ,"number_available","product_description","category","review_rating","image_url"]
-            writer = csv.DictWriter(file, headers)
+            writer = csv.DictWriter(file, fieldnames = headers)
+            writer.writeheader()
             writer.writerows(books_infos[categorie])
-
 except IOError:
     print("I/O error")    
-            
+
+     
+    for book_url  in books_pages.values():
+        page_content = SESSION.get(book_url)
+        soup = BeautifulSoup(page_content.content.decode('utf-8'), "lxml")
+        image_url = soup.find("img").attrs["src"].replace("../../","http://books.toscrape.com/")
+        book_cover = soup.find("img")
+        file_name = book_cover.attrs["alt"]
+        ressource = requests.get(image_url).content
+        with open (f"{file_name}.jpeg","wb") as img_file:
+            img_file.write(ressource)
 
 """
     assert books_pages["Travel"][0] == "https://books.toscrape.com/catalogue/its-only-the-himalayas_981/index.html", \
@@ -142,10 +153,4 @@ except IOError:
     assert len(books_pages["Sequential Art"]) == 75
     test_scrap_book_page = scrap_book_page("https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html")
     assert test_scrap_book_page["title"] == "A Light in the Attic", f"La fonction retourne la mauvaise réponse. Valeur reçue: '{test_scrap_book_page['title']}'"
-"""
-    
-
-"""
-# with open ("img", "wb") as
-# session page.content
 """
