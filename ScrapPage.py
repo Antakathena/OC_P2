@@ -47,6 +47,26 @@ def scrap_books_urls(url: str) -> list:
 
     return clean_links_to_books
 
+    
+def get_image(book_page_url): 
+    """
+    La fonction get_image() récupère l'image de couverture d'un livre à partir d'une page livre
+    et indique la catégorie et le titre du livre.
+    
+    Input : url d'une page livre du catalogue
+    Output : un fichier jpeg dont le nom indique la catégorie du livre puis son titre
+    """    
+    page_content = requests.get(book_page_url)
+    soup = BeautifulSoup(page_content.content.decode('utf-8'), "lxml")
+    book_cover = soup.find("img")
+    image_url = soup.find("img").attrs["src"].replace("../../","http://books.toscrape.com/")
+    links = soup.find_all("a")
+    category = links[3].text
+    ressource = requests.get(image_url).content
+    file_name = book_cover.attrs["alt"] 
+    with open (f"{category}_{file_name}.jpeg","wb") as img_file:
+                img_file.write(ressource)    
+
 def scrap_book_page(books_pages : str):
     """
     C'est la fonction qui récupère les informations sur un livre.
@@ -123,7 +143,10 @@ if __name__ == "__main__":
             book_info = scrap_book_page(book_url)
             books_infos[categorie].append(book_info)
             print(f"Pages de la catégorie {categorie} scrapées")
-        
+        for book_url in books_urls:
+            book_page_url = book_url
+            get_image(book_page_url)
+
 try: 
     for categorie in books_infos: 
         headers = ["product_page_url","universal_ product_code (upc)","title" ,"price_including_tax","price_excluding_tax" ,"number_available","product_description","category","review_rating","image_url"]
