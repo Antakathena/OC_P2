@@ -3,6 +3,7 @@
 import requests
 from bs4 import BeautifulSoup
 import csv
+import os
 
 SESSION = requests.Session()
 url_home_page = "https://books.toscrape.com/"
@@ -14,7 +15,22 @@ REVIEW_RATINGS = {
     "Five": 5,
 }
 
+PICTURES_FOLDER = "bookstoscrap_pictures"
 
+
+def create_pictures_folder(categorie):
+    """
+    créé un dossier où ranger les images d'une catégorie
+    """
+    path = os.getcwd()
+    path = os.path.join(path, PICTURES_FOLDER, categorie)
+    try:
+        os.makedirs(path, exist_ok=True)
+    except OSError:
+        pass
+    return path
+
+    
 def scrap_books_urls(url: str) -> list:
     """
     C'est la fonction qui récupére les url des livres d'une catégorie.
@@ -46,28 +62,32 @@ def scrap_books_urls(url: str) -> list:
         return clean_links_to_books + scrap_books_urls(url) # concatenation de liste, extend modifie l'ancienne liste
 
     return clean_links_to_books
-
-    
-def get_image(book_page_url): 
-    """
+   
+def get_image(book_page_soup): 
+    """ 
     La fonction get_image() récupère l'image de couverture d'un livre à partir d'une page livre
     et indique la catégorie et le titre du livre.
     
-    Input : url d'une page livre du catalogue
+    Input : soup d'une page livre du catalogue
     Output : un fichier jpeg dont le nom indique la catégorie du livre puis son titre
-    """    
-    page_content = requests.get(book_page_url)
-    soup = BeautifulSoup(page_content.content.decode('utf-8'), "lxml")
+    """  
+   
+    soup = book_page_soup
     book_cover = soup.find("img")
-    image_url = soup.find("img").attrs["src"].replace("../../","http://books.toscrape.com/")
+    image_url = book_cover.attrs["src"].replace("../../","http://books.toscrape.com/")
     links = soup.find_all("a")
     category = links[3].text
-    ressource = requests.get(image_url).content
-    file_name = book_cover.attrs["alt"] 
-    with open (f"{category}_{file_name}.jpeg","wb") as img_file:
-                img_file.write(ressource)    
+    ressource = SESSION.get(image_url).content
+    problematic_file_name = book_cover.attrs["alt"]
+    file_name = "".join(x for x in problematic_file_name if x.isalnum() or x in ' ').replace(' ', '-')
 
-def scrap_book_page(books_pages : str):
+    try:
+        with open(f"{PICTURES_FOLDER}/{category}/{file_name}.jpeg","wb") as img_file:
+            img_file.write(ressource)    
+    except OSError:
+        print(image_url)
+
+def scrap_book_page(books_pages, books_page_soup):
     """
     C'est la fonction qui récupère les informations sur un livre.
     Elle s'applique sur l'url d'une page livre.
@@ -78,22 +98,21 @@ def scrap_book_page(books_pages : str):
 
     Output :
     Dictionnaire contenant les informations sur le livre
-    
     """
     # assert préconditions
     assert books_pages.startswith("https://books.toscrape.com/catalogue/"), \
            f"Cette fonction ne fonctionne que sur les url https://books.toscrape/catalogue/. Reçu: {books_pages}"
     #encoding="utf-8" sinon pb sur title et description; BeautifulSoup(web, from_encoding='utf8')?
     URLpageLivre = books_pages
-    page_content = SESSION.get(URLpageLivre)
-    soup = BeautifulSoup(page_content.content.decode('utf-8'), "lxml")
+    soup = books_page_soup
     upc = soup.find("td").text
     title = soup.title.text.strip().replace("| Books to Scrape - Sandbox", "").strip()
     price_including_tax = soup.find(text="Price (incl. tax)").findNext('td').text.strip('Â').replace("£", "")
     price_excluding_tax = soup.find(text="Price (excl. tax)").findNext('td').text.strip('Â').replace("£", "")
     number_available = soup.find(text="Availability").findNext('td').text.replace("In stock (", "").replace("available)", "").strip()
     try:
-        product_description = soup.find(id= "product_description").findNext("p").text
+        too_long_product_description = soup.find(id= "too_long_product_description").findNext("p").text
+        product_description = too_long_product_description[376:]
     except AttributeError:
         product_description = None
     links = soup.find_all("a")
@@ -124,12 +143,12 @@ if __name__ == "__main__":
     home_page = SESSION.get(url_home_page)
     soup = BeautifulSoup(home_page.content.decode('utf-8'), "lxml")
 
-    # puis on scrappe les liens vers les pages des catégories
+    # puis on scrappe les liens vers les 1ères pages des catégories
     categories_pages = {}
     for link in soup.find_all("a")[3:53]: #les autres a ne sont pas des liens vers des catégories
         categories_pages[link.text.strip()] = url_home_page + link.attrs["href"]
 
-    # puis les liens vers les livres à partir des pages d'une catégorie
+    # puis les liens vers les livres à partir de ces pages
     books_pages = {}
     for categorie, url_categorie in categories_pages.items(): # sans item, on itere qu'à travers les keys
         books_pages[categorie.strip()] = scrap_books_urls(url_categorie)
@@ -139,14 +158,19 @@ if __name__ == "__main__":
     books_infos = {}
     for categorie, books_urls in books_pages.items():
         books_infos[categorie] = []
+        create_pictures_folder(categorie)
         for book_url in books_urls:
-            book_info = scrap_book_page(book_url)
-            books_infos[categorie].append(book_info)
-            print(f"Pages de la catégorie {categorie} scrapées")
-        for book_url in books_urls:
-            book_page_url = book_url
-            get_image(book_page_url)
+            page_content = SESSION.get(book_url)
+            soup = BeautifulSoup(page_content.content.decode('utf-8'), "lxml")
 
+            book_info = scrap_book_page(book_url, soup)
+            books_infos[categorie].append(book_info)
+            # ainsi que les images de couverture
+            get_image(soup)
+        print(f"Page(s) de la catégorie {categorie} scrapées")
+
+
+# enfin, créer un fichier csv par catégorie qui répertorie les informations extraites pour les livres de cette catégorie
 try: 
     for categorie in books_infos: 
         headers = ["product_page_url","universal_ product_code (upc)","title" ,"price_including_tax","price_excluding_tax" ,"number_available","product_description","category","review_rating","image_url"]
@@ -157,17 +181,7 @@ try:
 except IOError:
     print("I/O error")    
 
-     
-    for book_url  in books_pages.values():
-        page_content = SESSION.get(book_url)
-        soup = BeautifulSoup(page_content.content.decode('utf-8'), "lxml")
-        image_url = soup.find("img").attrs["src"].replace("../../","http://books.toscrape.com/")
-        book_cover = soup.find("img")
-        file_name = book_cover.attrs["alt"]
-        ressource = requests.get(image_url).content
-        with open (f"{file_name}.jpeg","wb") as img_file:
-            img_file.write(ressource)
-
+ 
 """
     assert books_pages["Travel"][0] == "https://books.toscrape.com/catalogue/its-only-the-himalayas_981/index.html", \
         f"La fonction retourne la mauvaise url.\n Reçu:{books_pages["Travel"][0]}. Attendu: https://books.toscrape.com/catalogue/its-only-the-himalayas_981/index.html"
