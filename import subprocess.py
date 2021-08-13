@@ -12,4 +12,9 @@ def install(package):
 
 #install("csv")
 
-install("time")
+#install("time")
+
+#install("import urllib.request")
+
+install("os")
+
