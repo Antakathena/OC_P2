@@ -29,8 +29,7 @@ def create_pictures_folder(categorie):
     except OSError:
         pass
     return path
-
-    
+  
 def scrap_books_urls(url: str) -> list:
     """
     C'est la fonction qui récupère les url des livres d'une catégorie.
@@ -62,7 +61,7 @@ def scrap_books_urls(url: str) -> list:
         return clean_links_to_books + scrap_books_urls(url) # concatenation de liste, extend modifie l'ancienne liste
 
     return clean_links_to_books
-   
+ 
 def get_image(book_page_soup): 
     """ 
     La fonction get_image() récupère l'image de couverture d'un livre à partir d'une page livre

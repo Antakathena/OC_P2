@@ -16,5 +16,5 @@ def install(package):
 
 #install("import urllib.request")
 
-install("os")
+#install("os")
 
