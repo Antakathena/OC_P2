@@ -28,13 +28,18 @@ puis les informations des livres à partir de ces liens trouvés sur les pages d
 enfin, on créé un fichier csv par catégorie qui répertorie les informations extraites pour les livres de cette catégorie.
 
 ## Instruction de démarrage :
-###Dans un terminal, utiliser les commandes suivantes :
+Dans un terminal, utiliser les commandes suivantes :
 
 $ python3 -m venv env
+
   env\Scripts\activate.bat (#à ajouter pour windows pour activer l’environnement virtuel)
   (#et pour linux?)
+  
 $ git clone https://github.com/Antakathena/OC_P2
+
 $ cd ../chemin/du/dossier
+
 $ pip install -r requirements.txt
+
 $ python SrapPage.py
 
