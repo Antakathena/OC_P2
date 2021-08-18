@@ -109,11 +109,15 @@ def scrap_book_page(books_pages, books_page_soup):
     price_including_tax = soup.find(text="Price (incl. tax)").findNext('td').text.strip('Â').replace("£", "")
     price_excluding_tax = soup.find(text="Price (excl. tax)").findNext('td').text.strip('Â').replace("£", "")
     number_available = soup.find(text="Availability").findNext('td').text.replace("In stock (", "").replace("available)", "").strip()
+    
     try:
-        too_long_product_description = soup.find(id= "too_long_product_description").findNext("p").text
-        product_description = too_long_product_description[376:]
-    except AttributeError:
+        too_long_product_description = soup.find(id= "product_description").findNext("p").text
+    except AttributeError:    
         product_description = None
+        print(f"{URLpageLivre} has no product description : hence None")
+    else:    
+        product_description = too_long_product_description[375:]
+
     links = soup.find_all("a")
     category = links[3].text
     balisesP = soup.find_all("p")
@@ -169,13 +173,13 @@ if __name__ == "__main__":
         print(f"Page(s) de la catégorie {categorie} scrapées")
 
 
-# enfin, créer un fichier csv par catégorie qui répertorie les informations extraites pour les livres de cette catégorie
-try: 
-    for categorie in books_infos: 
-        headers = ["product_page_url","universal_ product_code (upc)","title" ,"price_including_tax","price_excluding_tax" ,"number_available","product_description","category","review_rating","image_url"]
-        with open(f'{categorie}.csv', 'w', encoding="utf-8") as file:
-            writer = csv.DictWriter(file, fieldnames = headers)
-            writer.writeheader()
-            writer.writerows(books_infos[categorie])
-except IOError:
-    print("I/O error") 
+    # enfin, créer un fichier csv par catégorie qui répertorie les informations extraites pour les livres de cette catégorie
+    try: 
+        for categorie in books_infos: 
+            headers = ["product_page_url","universal_ product_code (upc)","title" ,"price_including_tax","price_excluding_tax" ,"number_available","product_description","category","review_rating","image_url"]
+            with open(f'{categorie}.csv', 'w', encoding="utf-8") as file:
+                writer = csv.DictWriter(file, fieldnames = headers)
+                writer.writeheader()
+                writer.writerows(books_infos[categorie])
+    except IOError:
+        print("I/O error") 

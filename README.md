@@ -1,6 +1,6 @@
 ## Infos Générales :
 
- Scrap Bookstoscap.py (changer le titre du.py) est un programme python 3 qui récupère des informations concernant les livres présentés dans le catalogue en ligne Bookstoscrap.com.
+ Scrap Bookstoscap.py est un programme python 3 qui récupère des informations concernant les livres présentés dans le catalogue en ligne Bookstoscrap.com.
  
 ## Utilité :
 
@@ -30,16 +30,15 @@ enfin, on créé un fichier csv par catégorie qui répertorie les informations 
 ## Instruction de démarrage :
 Dans un terminal, utiliser les commandes suivantes :
 
-$ python3 -m venv env
+$ python3 -m venv env (créé un dossier env dans le répértoire où vous vous trouvez)
 
-  env\Scripts\activate.bat (#à ajouter pour windows pour activer l’environnement virtuel)
-  (#et pour linux?)
+$ source env/bin/activate (sous linux) ou env\Scripts\activate.bat (pour activer l'environnement virtuel sous windows)
   
 $ git clone https://github.com/Antakathena/OC_P2
 
-$ cd ../chemin/du/dossier
+$ cd ../chemin/du/dossier (de la copie de OC_P2 dans votre dossier env)
 
 $ pip install -r requirements.txt
 
-$ python SrapPage.py
+$ python Scrap_Bookstoscrap.py
 
