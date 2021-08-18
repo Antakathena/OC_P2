@@ -33,7 +33,7 @@ def create_pictures_folder(categorie):
     
 def scrap_books_urls(url: str) -> list:
     """
-    C'est la fonction qui récupére les url des livres d'une catégorie.
+    C'est la fonction qui récupère les url des livres d'une catégorie.
     Elle s'applique sur l'url d'une page catégorie.
 
     Input:
@@ -179,15 +179,4 @@ try:
             writer.writeheader()
             writer.writerows(books_infos[categorie])
 except IOError:
-    print("I/O error")    
-
- 
-"""
-    assert books_pages["Travel"][0] == "https://books.toscrape.com/catalogue/its-only-the-himalayas_981/index.html", \
-        f"La fonction retourne la mauvaise url.\n Reçu:{books_pages["Travel"][0]}. Attendu: https://books.toscrape.com/catalogue/its-only-the-himalayas_981/index.html"
-    assert len(books_pages["Travel"]) == 11, \
-        f"Il manque des url sur la page Travel.\n Reçu:{books_pages["Travel"]}. Attendu: 11."
-    assert len(books_pages["Sequential Art"]) == 75
-    test_scrap_book_page = scrap_book_page("https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html")
-    assert test_scrap_book_page["title"] == "A Light in the Attic", f"La fonction retourne la mauvaise réponse. Valeur reçue: '{test_scrap_book_page['title']}'"
-"""
+    print("I/O error") 
